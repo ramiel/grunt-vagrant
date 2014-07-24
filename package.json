@@ -1,7 +1,7 @@
 {
   "name": "grunt-vagrant",
   "description": "Grunt plugin to control your Vagrant environments",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "homepage": "https://github.com/ramiel/grunt-vagrant",
   "author": {
     "name": "Fabrizio Ruggeri",
@@ -41,5 +41,8 @@
   ],
   "dependencies": {
     "step": "0.0.5"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   }
 }

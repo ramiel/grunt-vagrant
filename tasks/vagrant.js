@@ -35,31 +35,40 @@ module.exports = function(grunt) {
 
     var dir_cwd = path.dirname(options.vagrantfile),
         execution_plan = [],
-        define_func = function(cmd){
-          return function( error, stdout, stderr){
+        on_close_func = function(context, cmd){
+            return function (code) {
+                if(code !== 0){
+                  return context(new Error(util.format('Process %s exited with status %s', cmd, code)));
+                }
+                context(null);
+            }
+        },
+        define_func = function(cmd, args){
+          return function( error ){
               if(error){ throw error;}
-              if(stdout || stderr){
-                  grunt.verbose.write(stdout);
-                  grunt.verbose.error(stderr);
-              }
-              exec(cmd, {cwd: dir_cwd}, this);
+              var execution = spawn(cmd, args,  {cwd: dir_cwd});
+              execution.on('close', on_close_func(this, cmd + ' ' + args.join(' ') ));
+              execution.stdout.on('data',grunt.verbose.write);
+              execution.stderr.on('data',grunt.log.error);
+              
           };
         },
         plugin_func = function(plugin_name, cb){
             var cmd = util.format('%s plugin install %s', options.vagrant, plugin_name );
-            exec(cmd, cb);
+            grunt.log.writeln(util.format('Installing missing vagrant plugin: "%s"',plugin_name));
+            exec(cmd, { env: process.env }, cb);
         },
         plugin_list_func = function(plugins){
             return function(){
-                var done = this;
+                var finish_cb = this;
                 step(
                   function(){
                       var cmd = util.format('%s plugin list',options.vagrant);
-                      exec(cmd, this);
+                      exec(cmd, { env: process.env }, this);
                   },
                   function(error, stdout, sterr){
                       var installed = stdout.split('\n');
-                      installed.map(function(line){
+                      installed = installed.map(function(line){
                           line = line.split(' ');
                           return line[0];
                       });
@@ -71,7 +80,7 @@ module.exports = function(grunt) {
                           plugin_func(plugins[i], group());
                       }
                   },
-                  done
+                  finish_cb
                 );
             }
         },
@@ -82,15 +91,10 @@ module.exports = function(grunt) {
     }
     
     for(var i=0, len = this.data.commands.length; i < len; i++){
-        var cmd = util.format('%s %s', options.vagrant, this.data.commands[i].join(' ') );
-        execution_plan.push(define_func(cmd));
+        execution_plan.push(define_func(options.vagrant, this.data.commands[i] ));
     }
     execution_plan.push(function(error, stdout, stderr){
         if(error){ grunt.log.error(error); return false;}
-        if(stdout || stderr){
-            grunt.verbose.write(stdout);
-            grunt.verbose.error(stderr);  
-        }
         grunt.log.writeln('Vagrant environment ready');
         done();
     });
