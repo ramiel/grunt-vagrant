@@ -32,20 +32,12 @@ module.exports = function(grunt) {
     vagrant: {
       default_options: {
         options: {
+            vagrantfile: '/home/fabrizio/Templates/Projects/smarthealth/smart-machine/machines/test/Vagrantfile'
         },
-        files: {
-          'tmp/default_options': ['test/fixtures/testing', 'test/fixtures/123']
-        }
+        commands :[
+          ['halt']
+        ]
       },
-      custom_options: {
-        options: {
-          separator: ': ',
-          punctuation: ' !!!'
-        },
-        files: {
-          'tmp/custom_options': ['test/fixtures/testing', 'test/fixtures/123']
-        }
-      }
     },
 
     // Unit tests.
