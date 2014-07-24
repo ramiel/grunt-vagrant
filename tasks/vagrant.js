@@ -46,7 +46,7 @@ module.exports = function(grunt) {
         define_func = function(cmd, args){
           return function( error ){
               if(error){ throw error;}
-              var execution = spawn(cmd, args,  {cwd: dir_cwd});
+              var execution = spawn(cmd, args,  {env: generic_env});
               execution.on('close', on_close_func(this, cmd + ' ' + args.join(' ') ));
               execution.stdout.on('data',grunt.verbose.write);
               execution.stderr.on('data',grunt.log.error);
@@ -84,8 +84,12 @@ module.exports = function(grunt) {
                 );
             }
         },
-        done = this.async();
+        done = this.async(),
+        generic_env = process.env;
 
+    generic_env['VAGRANT_CWD'] = dir_cwd;
+    generic_env['VAGRANT_DOTFILE_PATH'] = generic_env['PWD'] + path.sep + '.vagrant';
+    
     if(options.plugins.length > 0){
         execution_plan.push(plugin_list_func(options.plugins));
     }
